@@ -3,6 +3,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('desktopLyric', {
+  platform: process.platform,
   onUpdate: (callback) => {
     const listener = (_event, payload) => callback(payload);
     ipcRenderer.on('desktop-lyric:update', listener);

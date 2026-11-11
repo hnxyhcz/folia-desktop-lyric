@@ -49,7 +49,7 @@ const FONT_MIN = 12;
 const FONT_MAX = 48;
 const FONT_DEFAULT = 19;
 /** 胶囊/窗口最小高度。 */
-const MIN_HEIGHT = 120;
+const MIN_HEIGHT = 150;
 /** 低于这个高度按单行歌词显示（拉高到阈值以上才进入多行列表）。 */
 const MULTI_MIN_HEIGHT = 170;
 /** 歌词偏移（毫秒）范围：把桌面歌词整体前移/后移，正数让歌词更晚出现。 */

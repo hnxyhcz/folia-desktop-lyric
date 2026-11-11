@@ -115,7 +115,7 @@
     position: relative;
     width: 100%;
     min-width: 450px;
-    min-height: 120px;
+    min-height: 150px;
     max-width: 100%;
     display: flex;
     flex-direction: column;
@@ -242,6 +242,7 @@
     min-height: 0; width: 100%;
     scrollbar-width: none; -ms-overflow-style: none;
     overscroll-behavior: contain;
+    gap: 8px;
     padding-bottom: 14px;
   }
   #lyrics::-webkit-scrollbar { display: none; }
@@ -261,7 +262,7 @@
     position: relative; flex: 0 0 auto;
     height: auto; min-height: var(--line-h);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    width: 100%; padding: 0 24px;
+    width: 100%; padding: 4px 24px;
     line-height: 1.2;
     color: rgb(var(--lyric-rgb));
     white-space: nowrap; overflow: hidden;
@@ -292,7 +293,8 @@
   }
   /* 每句歌词下方的翻译 / 音译 */
   #lyrics .l-line .l-sub {
-    font-size: max(10px, calc(var(--font-size) * .6)); font-weight: 400; line-height: 1.15;
+    font-size: max(10px, calc(var(--font-size) * .6)); font-weight: 400; line-height: 1.2;
+    margin-top: 3px;
     color: rgba(var(--trans-rgb), .72);
     display: flex; align-items: center; justify-content: center;
     width: 100%; max-width: 100%; overflow: hidden;
@@ -564,6 +566,8 @@
 
   // ------------------------------------------------------------ 渲染歌词
   let lastLinesKey = '';
+  let lastLinesData = [];
+  let lastLinesVersion = 0;
   function render(payload) {
     const artist = String(payload.artist || '').trim();
     const titleText = String(payload.title || '').trim();
@@ -596,7 +600,9 @@
     const nextRomanization = text ? String(payload.romanization || '').trim() : '';
     lastTranslation = nextTranslation;
     lastRomanization = nextRomanization;
-    renderLyricLines(lines, useMulti, Number(payload.linesVersion) || 0);
+    lastLinesData = lines;
+    lastLinesVersion = Number(payload.linesVersion) || 0;
+    renderLyricLines(lines, useMulti, lastLinesVersion);
 
     // 单行长歌词横向滚动（多行 / 任务栏模式不滚动）
     updateMarquee();
@@ -878,6 +884,14 @@
     if (!next || typeof next !== 'object') return;
     if (typeof next.showTranslation === 'boolean') showTranslation = next.showTranslation;
     if (typeof next.showRomanization === 'boolean') showRomanization = next.showRomanization;
+    // 多行：翻译/音译是每行内部的子行，重排行；同时把单行的 #trans/#rom 隐藏掉，避免闪一下。
+    if (!el.lyrics.hidden) {
+      el.trans.hidden = true;
+      el.rom.hidden = true;
+      renderLyricLines(lastLinesData, true, lastLinesVersion);
+      measure();
+      return;
+    }
     setLine(el.trans, lastTranslation, 'translation');
     setLine(el.rom, lastRomanization, 'romanization');
     measure();
@@ -1219,6 +1233,11 @@
     window.desktopLyric.command(lockedNow ? 'unlock' : 'lock');
   });
   document.getElementById('dock').addEventListener('click', (e) => { e.stopPropagation(); window.desktopLyric.command('to-taskbar'); });
+  // macOS 没有 Windows 任务栏，贴菜单栏/Dock 效果不好，直接隐藏「移到任务栏」按钮。
+  if (window.desktopLyric.platform === 'darwin') {
+    const dockBtn = document.getElementById('dock');
+    if (dockBtn) dockBtn.style.display = 'none';
+  }
   // 窗口尺寸变化（文字/菜单导致收放）时重排。缩放拖动过程中跳过重活，避免卡顿/圆角闪烁，
   // 松手后再统一刷新一次。
   window.addEventListener('resize', () => {
